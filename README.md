@@ -143,6 +143,7 @@ Se pdroa crear manualmente con
 sudo mknod /dev/signal_driver c <major> 0
 ```
 Obtenemos `<major>` con
+
 ![major](img/major.png)
 
 Debemos configurar permisos de lectura y escritura sobre el archivo para poder seleccionar la señal y observar su información a través de la aplicación en python de más adelante.
