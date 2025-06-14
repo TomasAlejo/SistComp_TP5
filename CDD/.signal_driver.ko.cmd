@@ -1,0 +1,1 @@
+savedcmd_/home/marck/tp5-Driver/CDD/signal_driver.ko := aarch64-linux-gnu-ld -r -EL  -maarch64elf -z noexecstack --no-warn-rwx-segments --build-id=sha1  -T arch/arm64/module.lds -o /home/marck/tp5-Driver/CDD/signal_driver.ko /home/marck/tp5-Driver/CDD/signal_driver.o /home/marck/tp5-Driver/CDD/signal_driver.mod.o /home/marck/tp5-Driver/CDD/.module-common.o
