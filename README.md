@@ -1,6 +1,7 @@
 # Trabajo Práctico N°5: Drivers de Dispositivos  
 **GrupoNotFound**  
 **REYEROS, Marcos Agustín**
+**CISNEROS, Tomás Alejo**
 
 ## Introducción General y Contextualización del TP
 
@@ -34,7 +35,7 @@ En este trabajo práctico se propone construir un **Character Device Driver** en
 - Las **correcciones de escala** necesarias se deben realizar desde la aplicación de usuario.
 - El driver debe operar en tiempo real, garantizando una lectura estable y coherente de los valores.
 
-El sistema puede desarrollarse y probarse sobre una **Raspberry Pi**, accediendo a las señales externas a través de puertos GPIO, o bien utilizando simuladores como **QEMU** con herramientas como `qemu-rpi-gpio`.
+El sistema puede desarrollarse y probarse sobre una **Raspberry Pi**, accediendo a las señales externas a través de puertos GPIO, o bien utilizando simuladores, en este trabajo se implementarón dos modos de trabajo, uno usando la **Raspberry Pi** y otro en un entorno totalmente simulado.
 
 Este proyecto integra conocimientos sobre desarrollo de módulos del kernel, interfaces de dispositivos, programación en C de bajo nivel, y visualización de datos desde el espacio de usuario, constituyendo una instancia clave para comprender la interacción directa entre software y hardware en sistemas Linux.
 
@@ -172,7 +173,107 @@ El driver fue correctamente compilado, cargado al kernel, y verificado desde con
 
 Este resultado confirma una implementación de un CDD autónomo y desacoplado del hardware, sirviendo como base para la próxima etapa del trabajo: `el desarrollo de una aplicación en espacio de usuario que se comunique con el driver, registre las señales y permita su visualización gráfica`.
 
-## Aplicación nivel de usuario
+# DESAFIO: Construcción de un CDD para Sensar Señales (Simulado)
+
+LLegó el momento de ahondar un poco más en el codigo que contiene la logica del modulo de kernel, en este caso el `cdd_sim.c` que funciona similar al `signal_driver.c` solo que adaptado a un ambito de simulación para repasar un poco de los conceptos de CDD y como lo aplicamos a este trabajo.
+
+
+---
+
+### Definición de constantes
+
+```c
+#define DEVICE_NAME "cdd_signals"
+#define CLASS_NAME "cdd_class"
+```
+Estas constantes definen el nombre simbólico del dispositivo y su clase en el sistema `/sys/class`, permitiendo que el dispositivo se exponga como un archivo en `/dev`. Esta es la forma estandarizada que tiene el **kernel de Linux** para conectar el driver con el espacio de usuario.
+
+```c
+#define IOCTL_SELECT_SIGNAL _IOW('a', 1, int)
+```
+El macro `_IOW` define un comando IOCTL para que el usuario pueda **controlar el comportamiento** del dispositivo mediante `ioctl(fd, cmd, arg)`. Encapsulando un mecanismo de control seguro entre espacio de usuario y kernel.
+
+---
+
+### Variables globales del dispositivo
+
+```c
+static dev_t dev_num;
+```
+`dev_t` representa el número de dispositivo que combina `major` (identificador del driver) y `minor` (identificador interno). El modelo de archivos de Linux asocia este número con archivos de dispositivo en `/dev`, permitiendo la **abstracción entre hardware y aplicaciones**.
+
+```c
+static struct class* cdd_class;
+static struct cdev cdd_cdev;
+```
+- `cdd_class` permite registrar una clase de dispositivos, facilitando la creación de nodos en `/dev` automáticamente.
+- `cdd_cdev` representa la estructura del kernel que define al Character Device.
+
+
+
+---
+
+### Control del dispositivo (IOCTL)
+
+```c
+static long cdd_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+```
+Permite enviar comandos al driver desde el espacio de usuario. Este mecanismo es clave para operaciones que no son simples lecturas o escrituras, como cambiar el tipo de señal.
+
+```c
+printk(KERN_INFO "CDD: señal cambiada a %d\n", current_signal);
+```
+`printk` es la herramienta de depuración principal en el espacio del kernel. Su salida es visible en `dmesg`, lo cual es vital para el seguimiento del comportamiento del driver.
+
+---
+
+### Registro de operaciones del dispositivo
+
+```c
+static struct file_operations fops = {
+    .owner = THIS_MODULE,
+    .open = cdd_open,
+    .release = cdd_release,
+    .read = cdd_read,
+    .unlocked_ioctl = cdd_ioctl,
+};
+```
+Asocia llamadas del sistema (`open`, `read`, `ioctl`) con funciones definidas por el driver. Esta estructura es lo que conecta el archivo `/dev/cdd_signals` con la lógica interna del kernel.
+
+---
+
+### Inicialización y creación del nodo de dispositivo
+
+```c
+alloc_chrdev_region(&dev_num, 0, 1, DEVICE_NAME);
+```
+Solicita al kernel un número mayor dinámicamente. Esto permite registrar el driver y enlazarlo con un archivo en `/dev`.
+
+```c
+cdev_init(&cdd_cdev, &fops);
+cdev_add(&cdd_cdev, dev_num, 1);
+```
+Prepara y registra la estructura `cdev`, fundamental para que el kernel direccione las operaciones hacia el driver correcto.
+
+```c
+cdd_class = class_create(CLASS_NAME);
+device_create(cdd_class, NULL, dev_num, NULL, DEVICE_NAME);
+```
+Permiten que aparezca automáticamente el archivo `/dev/cdd_signals`, haciendo disponible el driver para cualquier aplicación de usuario.
+
+---
+
+### Carga y descarga del módulo
+
+```c
+module_init(cdd_init);
+module_exit(cdd_exit);
+```
+Indican al kernel qué funciones ejecutar al cargar y descargar el módulo (`insmod` / `rmmod`). Parte clave del desarrollo de módulos del kernel.
+
+
+
+# Aplicación nivel de usuario
 
 Instalamos librerías necesarias como `matplotlib` y desarrollamos `app_tp5.py`
 
@@ -185,6 +286,11 @@ Se probo la aplicación en su primera version para esto nos pasamos a la raspber
 ![appRAspy](img/appRaspy.png)
 ![appRaspy2](img/appRaspy2.png)
 ![appRaspy2](img/appRaspy3.png)
+
+Señales simuladas:
+![image](https://github.com/user-attachments/assets/fa32c2f8-7087-401b-a102-aa25c78e9a88)
+![image](https://github.com/user-attachments/assets/08cd8437-a7b2-4d12-ad7f-2db98a1a40b9)
+
 
 ### 1ra Versión
 ```python
@@ -277,6 +383,8 @@ Ahora corregimos los detalles para una app funcional en terminos de ver el funci
 ![video](img/tp5_driver.gif)
 
 [📁 Descargar](img/tp5_driver.mp4)
+
+##
 
 ## Conclusión
  
