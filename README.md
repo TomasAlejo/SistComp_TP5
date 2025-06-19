@@ -1,6 +1,7 @@
 # Trabajo Práctico N°5: Drivers de Dispositivos  
 **GrupoNotFound**  
 **REYEROS, Marcos Agustín**
+
 **CISNEROS, Tomás Alejo**
 
 ## Introducción General y Contextualización del TP
@@ -173,7 +174,7 @@ El driver fue correctamente compilado, cargado al kernel, y verificado desde con
 
 Este resultado confirma una implementación de un CDD autónomo y desacoplado del hardware, sirviendo como base para la próxima etapa del trabajo: `el desarrollo de una aplicación en espacio de usuario que se comunique con el driver, registre las señales y permita su visualización gráfica`.
 
-# DESAFIO: Construcción de un CDD para Sensar Señales (Simulado)
+---
 
 LLegó el momento de ahondar un poco más en el codigo que contiene la logica del modulo de kernel, en este caso el `cdd_sim.c` que funciona similar al `signal_driver.c` solo que adaptado a un ambito de simulación para repasar un poco de los conceptos de CDD y como lo aplicamos a este trabajo.
 
@@ -287,7 +288,6 @@ Se probo la aplicación en su primera version para esto nos pasamos a la raspber
 ![appRaspy2](img/appRaspy2.png)
 ![appRaspy2](img/appRaspy3.png)
 
-Señales simuladas:
 ![image](https://github.com/user-attachments/assets/fa32c2f8-7087-401b-a102-aa25c78e9a88)
 ![image](https://github.com/user-attachments/assets/08cd8437-a7b2-4d12-ad7f-2db98a1a40b9)
 
